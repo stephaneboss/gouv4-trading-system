@@ -1,382 +1,1051 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GOUV4 Trading Dashboard v5.0 ULTIMATE</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Courier New', monospace;
-      background: #0a0a0a;
-      color: #00ff41;
-      overflow-x: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      padding: 15px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #00ff41;
-    }
-    .header h1 {
-      font-size: 1.4em;
-      text-shadow: 0 0 10px #00ff41;
-    }
-    .header .status {
-      display: flex;
-      gap: 15px;
-      align-items: center;
-    }
-    .status-dot {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: #00ff41;
-      animation: pulse 1.5s infinite;
-      display: inline-block;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 5px #00ff41; }
-      50% { opacity: 0.5; box-shadow: 0 0 15px #00ff41; }
-    }
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto;
-      gap: 10px;
-      padding: 10px;
-      height: calc(100vh - 70px);
-    }
-    .panel {
-      background: #111;
-      border: 1px solid #333;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .panel-header {
-      background: #1a1a2e;
-      padding: 8px 12px;
-      font-size: 0.9em;
-      color: #00d4ff;
-      border-bottom: 1px solid #333;
-      display: flex;
-      justify-content: space-between;
-    }
-    .panel-body {
-      padding: 10px;
-      overflow-y: auto;
-      max-height: 300px;
-    }
-    /* Terminal */
-    .terminal {
-      background: #000;
-      color: #00ff41;
-      font-size: 0.8em;
-      line-height: 1.6;
-      padding: 10px;
-      height: 250px;
-      overflow-y: auto;
-    }
-    .terminal .cmd-line::before {
-      content: 'GOUV4> ';
-      color: #00d4ff;
-    }
-    /* Agents */
-    .agent-card {
-      background: #1a1a2e;
-      border: 1px solid #333;
-      border-radius: 6px;
-      padding: 10px;
-      margin-bottom: 8px;
-    }
-    .agent-card .name {
-      color: #ff6b6b;
-      font-weight: bold;
-    }
-    .agent-card .status-online {
-      color: #00ff41;
-    }
-    .agent-card .status-offline {
-      color: #ff4444;
-    }
-    /* Key Manager */
-    .key-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px solid #222;
-      font-size: 0.85em;
-    }
-    .key-row .exchange { color: #ffd700; }
-    .key-row .masked { color: #888; }
-    .key-row .btn {
-      background: #0f3460;
-      color: #00d4ff;
-      border: none;
-      padding: 3px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.8em;
-    }
-    .key-row .btn:hover { background: #1a4a7a; }
-    /* Trading Stats */
-    .stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .stat-box {
-      background: #1a1a2e;
-      padding: 12px;
-      border-radius: 6px;
-      text-align: center;
-    }
-    .stat-box .value {
-      font-size: 1.5em;
-      color: #ffd700;
-    }
-    .stat-box .label {
-      font-size: 0.75em;
-      color: #888;
-      margin-top: 4px;
-    }
-    .profit { color: #00ff41 !important; }
-    .loss { color: #ff4444 !important; }
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 8px;
-      font-size: 0.7em;
-      color: #555;
-      border-top: 1px solid #222;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOUV4 MEXC PRO | Live Trading Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --neon-green: #00ff88;
+            --neon-red: #ff3366;
+            --neon-blue: #00d9ff;
+            --neon-yellow: #ffcc00;
+            --neon-purple: #b829ff;
+            --dark-bg: #020204;
+            --panel-bg: #0a0a0f;
+            --panel-border: #1f1f2e;
+        }
+        
+        * {
+            font-family: 'JetBrains Mono', monospace;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--dark-bg);
+            color: #e0e0e0;
+            min-height: 100vh;
+            line-height: 1.4;
+        }
+        
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        
+        .neon-text-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,136,0.5); }
+        .neon-text-red { color: var(--neon-red); text-shadow: 0 0 10px rgba(255,51,102,0.5); }
+        .neon-text-blue { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,217,255,0.5); }
+        .neon-text-yellow { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255,204,0,0.5); }
+        
+        .btn-cyber {
+            background: linear-gradient(135deg, rgba(0,255,136,0.1) 0%, rgba(0,217,255,0.1) 100%);
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        
+        .btn-cyber:hover:not(:disabled) {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0,255,136,0.5);
+        }
+        
+        .btn-cyber:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-danger {
+            border-color: var(--neon-red);
+            color: var(--neon-red);
+            background: linear-gradient(135deg, rgba(255,51,102,0.1) 0%, rgba(255,51,102,0.05) 100%);
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: var(--neon-red);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255,51,102,0.5);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-online { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+        .status-offline { background: var(--neon-red); box-shadow: 0 0 10px var(--neon-red); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .terminal {
+            background: rgba(0,0,0,0.9);
+            border: 1px solid var(--panel-border);
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+        
+        .log-time { color: #666; }
+        .log-info { color: var(--neon-green); }
+        .log-error { color: var(--neon-red); }
+        .log-warning { color: var(--neon-yellow); }
+        .log-trade { color: var(--neon-blue); }
+        
+        .config-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--panel-border);
+            color: var(--neon-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .config-input:focus {
+            outline: none;
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(0,255,136,0.2);
+        }
+        
+        .price-up { color: var(--neon-green); }
+        .price-down { color: var(--neon-red); }
+        
+        .balance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .order-item {
+            display: grid;
+            grid-template-columns: 60px 1fr 1fr 80px;
+            gap: 8px;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            align-items: center;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track { background: var(--dark-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-green); }
+        
+        .loading-spinner {
+            border: 2px solid rgba(0,255,136,0.1);
+            border-top-color: var(--neon-green);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-
-  <!-- HEADER -->
-  <div class="header">
-    <h1>GOUV4 Trading Dashboard v5.0 ULTIMATE</h1>
-    <div class="status">
-      <span class="status-dot"></span> SYSTEM ONLINE
-      <span id="clock">00:00:00</span>
-    </div>
-  </div>
-
-  <!-- MAIN GRID -->
-  <div class="main-grid">
-
-    <!-- TERMINAL PANEL -->
-    <div class="panel">
-      <div class="panel-header">
-        <span>TERMINAL GOUV4</span>
-        <span id="term-status">Connected</span>
-      </div>
-      <div class="terminal" id="terminal">
-        <div class="cmd-line">System boot sequence initiated...</div>
-        <div class="cmd-line">Loading MEXC connector v2.0...</div>
-        <div class="cmd-line">WebSocket connection established</div>
-        <div class="cmd-line">AES-256 encryption module loaded</div>
-        <div class="cmd-line">API Key Manager initialized</div>
-        <div class="cmd-line">Rate limiter: 120 req/min configured</div>
-        <div class="cmd-line">Trading pairs: BTC/USDT, ETH/USDT, SOL/USDT</div>
-        <div class="cmd-line">GOUV4 Trading System v5.0 READY</div>
-      </div>
-    </div>
-
-    <!-- AGENTS PANEL -->
-    <div class="panel">
-      <div class="panel-header">
-        <span>AGENTS MULTI-IA</span>
-        <span id="agent-count">4/4 Active</span>
-      </div>
-      <div class="panel-body">
-        <div class="agent-card">
-          <span class="name">MERLIN</span> - <span class="status-online">ONLINE</span>
-          <div style="color:#888;font-size:0.8em">Backend orchestrator + Key vault</div>
+    <div class="cyber-grid"></div>
+    
+    <header class="glass-panel border-b border-gray-800 p-4">
+        <div class="flex items-center justify-between max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center">
+                    <span class="text-black font-bold text-sm">G4</span>
+                </div>
+                <div>
+                    <div class="text-lg font-bold neon-text-green tracking-wider">GOUV4 MEXC PRO</div>
+                    <div class="text-xs text-gray-500">LIVE TRADING TERMINAL</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div id="connection-status" class="flex items-center gap-2 px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                    <span class="status-dot status-offline"></span>
+                    <span>Disconnected</span>
+                </div>
+                <div class="text-xs font-mono text-gray-400" id="clock">00:00:00</div>
+            </div>
         </div>
-        <div class="agent-card">
-          <span class="name">KIMI</span> - <span class="status-online">ONLINE</span>
-          <div style="color:#888;font-size:0.8em">Trading strategy + Dashboard UI</div>
-        </div>
-        <div class="agent-card">
-          <span class="name">GEMINI</span> - <span class="status-online">ONLINE</span>
-          <div style="color:#888;font-size:0.8em">Security audit + Monitoring</div>
-        </div>
-        <div class="agent-card">
-          <span class="name">COMET</span> - <span class="status-online">ONLINE</span>
-          <div style="color:#888;font-size:0.8em">Deployment + GitHub automation</div>
-        </div>
-      </div>
-    </div>
+    </header>
 
-    <!-- KEY MANAGER PANEL -->
-    <div class="panel">
-      <div class="panel-header">
-        <span>GESTIONNAIRE DE CLEFS API (AES-256)</span>
-        <span style="color:#00ff41">Encrypted</span>
-      </div>
-      <div class="panel-body">
-        <div class="key-row">
-          <span class="exchange">MEXC</span>
-          <span class="masked">mx0v...****...7k2p</span>
-          <button class="btn" onclick="rotateKey('mexc')">Rotate</button>
+    <main class="max-w-7xl mx-auto p-4 space-y-4">
+        
+        <!-- API Configuration -->
+        <div class="glass-panel rounded-lg p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold flex items-center gap-2">
+                    <i data-lucide="key" class="w-4 h-4 text-yellow-400"></i>
+                    MEXC API Configuration
+                </h3>
+                <div class="flex gap-2">
+                    <button onclick="saveApiConfig()" class="btn-cyber px-4 py-2 rounded text-xs">Save & Connect</button>
+                    <button onclick="clearApiConfig()" class="btn-danger px-4 py-2 rounded text-xs">Clear</button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">API Key</label>
+                    <input type="text" id="api-key" class="config-input w-full px-3 py-2 rounded text-sm" placeholder="mx0vxxxxxxxxxxxxxxxx">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Secret Key</label>
+                    <input type="password" id="api-secret" class="config-input w-full px-3 py-2 rounded text-sm" placeholder="••••••••••••••••">
+                </div>
+            </div>
+            
+            <div class="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                <span class="flex items-center gap-1"><i data-lucide="shield" class="w-3 h-3"></i> AES-256 Encrypted</span>
+                <span class="flex items-center gap-1"><i data-lucide="lock" class="w-3 h-3"></i> Local Storage Only</span>
+                <span class="flex items-center gap-1"><i data-lucide="server" class="w-3 h-3"></i> CORS Proxy: allorigins.win</span>
+            </div>
         </div>
-        <div class="key-row">
-          <span class="exchange">MEXC SECRET</span>
-          <span class="masked">****...encrypted...****</span>
-          <button class="btn" onclick="rotateKey('mexc-secret')">Rotate</button>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            
+            <!-- Live Price -->
+            <div class="glass-panel rounded-lg p-4 lg:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wider">BTC/USDT Spot Price</div>
+                        <div class="flex items-baseline gap-3 mt-1">
+                            <div class="text-4xl font-bold neon-text-green" id="btc-price">--.--</div>
+                            <div class="text-lg" id="btc-change">--</div>
+                        </div>
+                    </div>
+                    <div class="text-right space-y-1">
+                        <div class="text-xs text-gray-500">24h High: <span class="text-white font-bold" id="btc-high">--</span></div>
+                        <div class="text-xs text-gray-500">24h Low: <span class="text-white font-bold" id="btc-low">--</span></div>
+                        <div class="text-xs text-gray-500">24h Volume: <span class="text-blue-400 font-bold" id="btc-volume">--</span></div>
+                    </div>
+                </div>
+                
+                <!-- Live Price Chart -->
+                <div class="h-48 bg-black/40 rounded border border-gray-800 relative">
+                    <canvas id="price-chart" class="w-full h-full"></canvas>
+                    <div id="chart-loading" class="absolute inset-0 flex items-center justify-center text-gray-500 text-sm hidden">
+                        <span class="loading-spinner mr-2"></span> Loading chart...
+                    </div>
+                </div>
+                
+                <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                    <div class="p-3 rounded bg-black/30 border border-gray-800">
+                        <div class="text-xs text-gray-500 mb-1">Best Bid</div>
+                        <div class="text-lg font-bold text-green-400" id="btc-bid">--</div>
+                    </div>
+                    <div class="p-3 rounded bg-black/30 border border-gray-800">
+                        <div class="text-xs text-gray-500 mb-1">Best Ask</div>
+                        <div class="text-lg font-bold text-red-400" id="btc-ask">--</div>
+                    </div>
+                    <div class="p-3 rounded bg-black/30 border border-gray-800">
+                        <div class="text-xs text-gray-500 mb-1">Spread</div>
+                        <div class="text-lg font-bold text-yellow-400" id="btc-spread">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Panel -->
+            <div class="glass-panel rounded-lg p-4">
+                <h3 class="text-sm font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i>
+                    Order Entry
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="flex gap-2">
+                        <button onclick="setOrderSide('BUY')" id="btn-buy" class="flex-1 py-3 rounded bg-green-500/20 text-green-400 border-2 border-green-500/50 font-bold hover:bg-green-500 hover:text-black transition ring-2 ring-green-500">BUY</button>
+                        <button onclick="setOrderSide('SELL')" id="btn-sell" class="flex-1 py-3 rounded bg-red-500/20 text-red-400 border border-red-500/50 font-bold hover:bg-red-500 hover:text-white transition">SELL</button>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Order Type</label>
+                        <select id="order-type" class="config-input w-full px-3 py-2 rounded text-sm" onchange="togglePriceInput()">
+                            <option value="MARKET">Market Order</option>
+                            <option value="LIMIT">Limit Order</option>
+                        </select>
+                    </div>
+                    
+                    <div id="price-container" class="hidden">
+                        <label class="text-xs text-gray-500 mb-1 block">Price (USDT)</label>
+                        <input type="number" id="order-price" class="config-input w-full px-3 py-2 rounded text-sm" placeholder="0.00" step="0.01">
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Quantity (BTC)</label>
+                        <input type="number" id="order-quantity" class="config-input w-full px-3 py-2 rounded text-sm" placeholder="0.001" step="0.0001" min="0.0001">
+                    </div>
+                    
+                    <div class="flex gap-1 text-xs">
+                        <button onclick="setQuantityPercent(25)" class="flex-1 py-1.5 rounded bg-gray-800 hover:bg-gray-700 transition border border-gray-700">25%</button>
+                        <button onclick="setQuantityPercent(50)" class="flex-1 py-1.5 rounded bg-gray-800 hover:bg-gray-700 transition border border-gray-700">50%</button>
+                        <button onclick="setQuantityPercent(75)" class="flex-1 py-1.5 rounded bg-gray-800 hover:bg-gray-700 transition border border-gray-700">75%</button>
+                        <button onclick="setQuantityPercent(100)" class="flex-1 py-1.5 rounded bg-gray-800 hover:bg-gray-700 transition border border-gray-700">100%</button>
+                    </div>
+                    
+                    <div class="p-3 rounded bg-black/30 border border-gray-800">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500">Available USDT:</span>
+                            <span class="text-green-400 font-bold" id="available-usdt">--</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Available BTC:</span>
+                            <span class="text-yellow-400 font-bold" id="available-btc">--</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="placeOrder()" id="btn-execute" class="btn-cyber w-full py-3 rounded font-bold text-sm">
+                        <i data-lucide="shield-check" class="w-4 h-4 inline mr-2"></i>
+                        EXECUTE ORDER
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="key-row">
-          <span class="exchange">JWT TOKEN</span>
-          <span class="masked">eyJh...****...valid</span>
-          <button class="btn" onclick="rotateKey('jwt')">Refresh</button>
+
+        <!-- Account & Orders -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            <!-- Account Balance -->
+            <div class="glass-panel rounded-lg p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-4 h-4 text-blue-400"></i>
+                        Account Balance
+                    </h3>
+                    <button onclick="fetchAccount()" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh
+                    </button>
+                </div>
+                
+                <div id="balance-container" class="max-h-64 overflow-y-auto">
+                    <div class="text-center text-gray-500 py-8 text-sm">Configure API keys to view balance</div>
+                </div>
+            </div>
+
+            <!-- Open Orders -->
+            <div class="glass-panel rounded-lg p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold flex items-center gap-2">
+                        <i data-lucide="list" class="w-4 h-4 text-purple-400"></i>
+                        Open Orders
+                    </h3>
+                    <button onclick="fetchOpenOrders()" class="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh
+                    </button>
+                </div>
+                
+                <div class="max-h-64 overflow-y-auto">
+                    <div id="orders-header" class="grid grid-cols-4 gap-2 text-xs text-gray-500 px-3 pb-2 border-b border-gray-800 mb-2">
+                        <span>Side</span>
+                        <span>Price</span>
+                        <span>Amount</span>
+                        <span class="text-right">Action</span>
+                    </div>
+                    <div id="orders-container" class="space-y-1">
+                        <div class="text-center text-gray-500 py-8 text-sm">No open orders</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div style="margin-top:10px;text-align:center">
-          <button class="btn" style="padding:8px 20px" onclick="addNewKey()">+ Add New Key</button>
+
+        <!-- Terminal -->
+        <div class="terminal rounded-lg p-4 h-40 flex flex-col">
+            <div class="flex items-center justify-between mb-2 border-b border-gray-800 pb-2">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4 text-green-400"></i>
+                    <span class="text-xs font-bold text-gray-400">SYSTEM LOG</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="clearLog()" class="text-xs text-gray-500 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition">Clear</button>
+                    <button onclick="exportLog()" class="text-xs text-gray-500 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition">Export</button>
+                </div>
+            </div>
+            <div id="terminal-output" class="flex-1 overflow-y-auto font-mono text-xs space-y-1"></div>
         </div>
-      </div>
-    </div>
+    </main>
 
-    <!-- TRADING STATS PANEL -->
-    <div class="panel">
-      <div class="panel-header">
-        <span>MEXC TRADING STATS</span>
-        <span id="last-update">Live</span>
-      </div>
-      <div class="panel-body">
-        <div class="stat-grid">
-          <div class="stat-box">
-            <div class="value" id="btc-price">$67,109</div>
-            <div class="label">BTC/USDT</div>
-          </div>
-          <div class="stat-box">
-            <div class="value profit" id="pnl-today">+2.4%</div>
-            <div class="label">PnL Today</div>
-          </div>
-          <div class="stat-box">
-            <div class="value" id="open-orders">3</div>
-            <div class="label">Open Orders</div>
-          </div>
-          <div class="stat-box">
-            <div class="value" id="ws-latency">42ms</div>
-            <div class="label">WS Latency</div>
-          </div>
-        </div>
-        <div style="margin-top:12px;padding:8px;background:#1a1a2e;border-radius:6px">
-          <div style="color:#00d4ff;font-size:0.85em">Recent Trades</div>
-          <div style="font-size:0.8em;margin-top:4px">
-            <div>BUY BTC/USDT @ 67,050 - 0.002 BTC <span class="profit">[+$12.40]</span></div>
-            <div>SELL ETH/USDT @ 3,842 - 0.5 ETH <span class="profit">[+$8.20]</span></div>
-            <div>BUY SOL/USDT @ 178.5 - 10 SOL <span class="loss">[-$3.10]</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- FOOTER -->
-  <div class="footer">
-    GOUV4 Trading System v5.0 ULTIMATE | Akash Network | MEXC Exchange | Kimi Plan
-  </div>
-
-  <!-- JAVASCRIPT -->
-  <script>
-    // Live Clock
-    function updateClock() {
-      const now = new Date();
-      document.getElementById('clock').textContent = now.toLocaleTimeString('fr-CA');
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    // Terminal logging
-    function termLog(msg) {
-      const terminal = document.getElementById('terminal');
-      const line = document.createElement('div');
-      line.className = 'cmd-line';
-      line.textContent = msg;
-      terminal.appendChild(line);
-      terminal.scrollTop = terminal.scrollHeight;
-    }
-
-    // WebSocket connection to backend
-    const WS_URL = 'ws://localhost:8080';
-    let ws = null;
-    let reconnectInterval = null;
-
-    function connectWS() {
-      try {
-        ws = new WebSocket(WS_URL);
-        ws.onopen = () => {
-          termLog('WebSocket connected to backend');
-          document.getElementById('term-status').textContent = 'Connected';
-          document.getElementById('term-status').style.color = '#00ff41';
-        };
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === 'ticker') {
-              document.getElementById('btc-price').textContent = '$' + parseFloat(data.price).toLocaleString();
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Configuration
+        const MEXC_BASE_URL = 'https://api.mexc.com';
+        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+        
+        // State
+        let currentOrderSide = 'BUY';
+        let priceHistory = [];
+        let maxHistoryPoints = 100;
+        let lastPrice = 0;
+        let accountData = null;
+        
+        // Load saved config
+        window.onload = () => {
+            const savedKey = localStorage.getItem('mexc_api_key');
+            const savedSecret = localStorage.getItem('mexc_api_secret');
+            
+            if (savedKey) document.getElementById('api-key').value = savedKey;
+            if (savedSecret) document.getElementById('api-secret').value = savedSecret;
+            
+            if (savedKey && savedSecret) {
+                log('API keys loaded from localStorage', 'info');
+                updateConnectionStatus(true);
+                fetchAccount();
+                fetchOpenOrders();
+            } else {
+                log('Please configure MEXC API credentials', 'warning');
             }
-            if (data.type === 'trade') {
-              termLog('Trade: ' + data.side + ' ' + data.symbol + ' @ ' + data.price);
+            
+            // Start price polling
+            fetchPrice();
+            setInterval(fetchPrice, 3000);
+            setInterval(updateClock, 1000);
+            
+            // Initialize chart
+            initChart();
+        };
+        
+        // Generate HMAC-SHA256 signature using CryptoJS
+        function generateSignature(queryString, secret) {
+            return CryptoJS.HmacSHA256(queryString, secret).toString();
+        }
+        
+        // Make authenticated request to MEXC API
+        async function mexcRequest(endpoint, method = 'GET', params = {}, signed = false) {
+            const apiKey = document.getElementById('api-key').value.trim();
+            const apiSecret = document.getElementById('api-secret').value.trim();
+            
+            if (signed && (!apiKey || !apiSecret)) {
+                throw new Error('API credentials required');
             }
-            if (data.type === 'heartbeat') {
-              document.getElementById('ws-latency').textContent = data.latency + 'ms';
+            
+            let url = MEXC_BASE_URL + endpoint;
+            const headers = {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            };
+            
+            if (signed) {
+                const timestamp = Date.now();
+                params.timestamp = timestamp;
+                params.recvWindow = 5000;
+                
+                // Sort params alphabetically
+                const sortedParams = {};
+                Object.keys(params).sort().forEach(key => {
+                    sortedParams[key] = params[key];
+                });
+                
+                const queryString = Object.keys(sortedParams)
+                    .map(key => `${key}=${sortedParams[key]}`)
+                    .join('&');
+                
+                const signature = generateSignature(queryString, apiSecret);
+                params.signature = signature;
+                headers['X-MEXC-APIKEY'] = apiKey;
             }
-          } catch(e) {
-            termLog('Data: ' + event.data);
-          }
-        };
-        ws.onclose = () => {
-          termLog('WebSocket disconnected - reconnecting...');
-          document.getElementById('term-status').textContent = 'Reconnecting';
-          document.getElementById('term-status').style.color = '#ffd700';
-          setTimeout(connectWS, 5000);
-        };
-        ws.onerror = () => {
-          termLog('WebSocket error - backend offline');
-          document.getElementById('term-status').textContent = 'Offline';
-          document.getElementById('term-status').style.color = '#ff4444';
-        };
-      } catch(e) {
-        termLog('Cannot connect to backend: ' + e.message);
-      }
-    }
-
-    // Key Manager functions
-    function rotateKey(keyName) {
-      termLog('Rotating key: ' + keyName + '...');
-      setTimeout(() => termLog('Key ' + keyName + ' rotated successfully (AES-256)'), 1000);
-    }
-
-    function addNewKey() {
-      const exchange = prompt('Exchange name:');
-      if (exchange) {
-        termLog('Adding new key for: ' + exchange);
-        termLog('Key encrypted and stored with AES-256');
-      }
-    }
-
-    // Simulate live data updates
-    function simulateData() {
-      const prices = [67000, 67050, 67100, 66980, 67200, 67150];
-      const price = prices[Math.floor(Math.random() * prices.length)];
-      document.getElementById('btc-price').textContent = '$' + price.toLocaleString();
-
-      const latency = Math.floor(Math.random() * 80) + 20;
-      document.getElementById('ws-latency').textContent = latency + 'ms';
-    }
-    setInterval(simulateData, 3000);
-
-    // Init
-    termLog('Dashboard v5.0 ULTIMATE loaded');
-    termLog('Connecting to backend...');
-    connectWS();
-  </script>
-
+            
+            // Build final URL
+            const queryString = Object.keys(params)
+                .map(key => `${key}=${encodeURIComponent(params[key])}`)
+                .join('&');
+            
+            if (queryString) {
+                url += '?' + queryString;
+            }
+            
+            // Use CORS proxy
+            const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: headers
+                };
+                
+                if (method === 'POST') {
+                    // For POST, body should be query string
+                    const bodyParams = {...params};
+                    delete bodyParams.timestamp;
+                    delete bodyParams.recvWindow;
+                    delete bodyParams.signature;
+                    
+                    const bodyQuery = Object.keys(bodyParams)
+                        .map(key => `${key}=${encodeURIComponent(bodyParams[key])}`)
+                        .join('&');
+                    
+                    options.body = bodyQuery;
+                }
+                
+                log(`${method} ${endpoint}`, 'info');
+                
+                const response = await fetch(proxyUrl, options);
+                const data = await response.json();
+                
+                if (data.code) {
+                    throw new Error(data.msg || `Error ${data.code}`);
+                }
+                
+                return data;
+                
+            } catch (error) {
+                log(`Request failed: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // Fetch current BTC price
+        async function fetchPrice() {
+            try {
+                const data = await mexcRequest('/api/v3/ticker/24hr', 'GET', { symbol: 'BTCUSDT' });
+                
+                if (data && data.lastPrice) {
+                    const price = parseFloat(data.lastPrice);
+                    const change = parseFloat(data.priceChangePercent);
+                    const high = parseFloat(data.highPrice);
+                    const low = parseFloat(data.lowPrice);
+                    const volume = parseFloat(data.volume);
+                    const bid = parseFloat(data.bidPrice);
+                    const ask = parseFloat(data.askPrice);
+                    
+                    lastPrice = price;
+                    
+                    // Update price display
+                    document.getElementById('btc-price').textContent = price.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    // Update change
+                    const changeEl = document.getElementById('btc-change');
+                    changeEl.innerHTML = `
+                        <span class="${change >= 0 ? 'price-up' : 'price-down'} text-sm font-bold">
+                            ${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%
+                        </span>
+                    `;
+                    
+                    // Update stats
+                    document.getElementById('btc-high').textContent = high.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    document.getElementById('btc-low').textContent = low.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    document.getElementById('btc-volume').textContent = (volume / 1000000).toFixed(2) + 'M';
+                    document.getElementById('btc-bid').textContent = bid.toFixed(2);
+                    document.getElementById('btc-ask').textContent = ask.toFixed(2);
+                    document.getElementById('btc-spread').textContent = ((ask - bid) / bid * 100).toFixed(4) + '%';
+                    
+                    // Update chart
+                    updateChart(price);
+                    
+                    // Update limit price if empty
+                    const limitPrice = document.getElementById('order-price');
+                    if (limitPrice && !limitPrice.value && document.getElementById('order-type').value === 'LIMIT') {
+                        limitPrice.value = price.toFixed(2);
+                    }
+                }
+            } catch (error) {
+                // Silent fail for polling
+            }
+        }
+        
+        // Fetch account balance
+        async function fetchAccount() {
+            const apiKey = document.getElementById('api-key').value;
+            if (!apiKey) {
+                log('Please configure API keys first', 'error');
+                return;
+            }
+            
+            try {
+                log('Fetching account balance...', 'info');
+                const data = await mexcRequest('/api/v3/account', 'GET', {}, true);
+                
+                accountData = data;
+                
+                if (data && data.balances) {
+                    const container = document.getElementById('balance-container');
+                    
+                    // Filter non-zero balances
+                    const nonZero = data.balances.filter(b => {
+                        const free = parseFloat(b.free);
+                        const locked = parseFloat(b.locked);
+                        return free > 0 || locked > 0;
+                    });
+                    
+                    // Sort by total value (approximate)
+                    nonZero.sort((a, b) => {
+                        const totalA = parseFloat(a.free) + parseFloat(a.locked);
+                        const totalB = parseFloat(b.free) + parseFloat(b.locked);
+                        return totalB - totalA;
+                    });
+                    
+                    // Update available amounts for trading
+                    const usdtBalance = data.balances.find(b => b.asset === 'USDT');
+                    const btcBalance = data.balances.find(b => b.asset === 'BTC');
+                    
+                    if (usdtBalance) {
+                        document.getElementById('available-usdt').textContent = 
+                            parseFloat(usdtBalance.free).toFixed(2);
+                    }
+                    if (btcBalance) {
+                        document.getElementById('available-btc').textContent = 
+                            parseFloat(btcBalance.free).toFixed(6);
+                    }
+                    
+                    if (nonZero.length === 0) {
+                        container.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm">No balances found</div>';
+                        return;
+                    }
+                    
+                    container.innerHTML = nonZero.map(b => {
+                        const free = parseFloat(b.free);
+                        const locked = parseFloat(b.locked);
+                        const total = free + locked;
+                        
+                        return `
+                            <div class="balance-item rounded bg-black/20 hover:bg-black/40 transition">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-300">
+                                        ${b.asset.slice(0, 2)}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm text-white">${b.asset}</div>
+                                        <div class="text-xs text-gray-500">Free: ${free.toFixed(6)}</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-green-400">${total.toFixed(6)}</div>
+                                    ${locked > 0 ? `<div class="text-xs text-yellow-500">Locked: ${locked.toFixed(6)}</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    log(`Loaded ${nonZero.length} asset balances`, 'info');
+                }
+            } catch (error) {
+                log('Failed to fetch account: ' + error.message, 'error');
+            }
+        }
+        
+        // Fetch open orders
+        async function fetchOpenOrders() {
+            const apiKey = document.getElementById('api-key').value;
+            if (!apiKey) {
+                log('Please configure API keys', 'error');
+                return;
+            }
+            
+            try {
+                const data = await mexcRequest('/api/v3/openOrders', 'GET', { symbol: 'BTCUSDT' }, true);
+                
+                const container = document.getElementById('orders-container');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 py-8 text-sm">No open orders</div>';
+                    return;
+                }
+                
+                container.innerHTML = data.map(order => {
+                    const isBuy = order.side === 'BUY';
+                    return `
+                        <div class="order-item rounded bg-black/20 hover:bg-black/40 transition ${isBuy ? 'border-l-2 border-green-500' : 'border-l-2 border-red-500'}">
+                            <div class="${isBuy ? 'text-green-400' : 'text-red-400'} font-bold text-xs">
+                                ${order.side}
+                            </div>
+                            <div class="text-xs text-gray-300">
+                                ${order.type === 'MARKET' ? 'Market' : parseFloat(order.price).toFixed(2)}
+                            </div>
+                            <div class="text-xs text-gray-300">
+                                ${parseFloat(order.origQty).toFixed(4)}
+                            </div>
+                            <div class="text-right">
+                                <button onclick="cancelOrder('${order.orderId}')" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-red-500/10 transition">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                log(`Loaded ${data.length} open orders`, 'info');
+                
+            } catch (error) {
+                log('Failed to fetch orders: ' + error.message, 'error');
+            }
+        }
+        
+        // Place order
+        async function placeOrder() {
+            const apiKey = document.getElementById('api-key').value;
+            const quantity = document.getElementById('order-quantity').value;
+            const type = document.getElementById('order-type').value;
+            const price = document.getElementById('order-price').value;
+            
+            if (!apiKey) {
+                log('Please configure API keys', 'error');
+                return;
+            }
+            
+            if (!quantity || parseFloat(quantity) <= 0) {
+                log('Invalid quantity', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('btn-execute');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner mr-2"></span>Processing...';
+            
+            const params = {
+                symbol: 'BTCUSDT',
+                side: currentOrderSide,
+                type: type,
+                quantity: quantity
+            };
+            
+            if (type === 'LIMIT') {
+                if (!price || parseFloat(price) <= 0) {
+                    log('Invalid price for limit order', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4 inline mr-2"></i>EXECUTE ORDER';
+                    lucide.createIcons();
+                    return;
+                }
+                params.price = price;
+                params.timeInForce = 'GTC';
+            }
+            
+            try {
+                log(`Placing ${currentOrderSide} ${type} order: ${quantity} BTC...`, 'trade');
+                
+                const data = await mexcRequest('/api/v3/order', 'POST', params, true);
+                
+                if (data && data.orderId) {
+                    log(`✓ Order placed successfully! ID: ${data.orderId}`, 'info');
+                    fetchOpenOrders();
+                    fetchAccount();
+                    
+                    // Clear quantity
+                    document.getElementById('order-quantity').value = '';
+                } else {
+                    log('Order response invalid', 'error');
+                }
+            } catch (error) {
+                log('Order failed: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4 inline mr-2"></i>EXECUTE ORDER';
+                lucide.createIcons();
+            }
+        }
+        
+        // Cancel order
+        async function cancelOrder(orderId) {
+            try {
+                log(`Cancelling order ${orderId}...`, 'warning');
+                
+                await mexcRequest('/api/v3/order', 'DELETE', {
+                    symbol: 'BTCUSDT',
+                    orderId: orderId
+                }, true);
+                
+                log('✓ Order cancelled', 'info');
+                fetchOpenOrders();
+                fetchAccount();
+            } catch (error) {
+                log('Cancel failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Chart functions
+        function initChart() {
+            const canvas = document.getElementById('price-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            
+            drawChart();
+        }
+        
+        function updateChart(price) {
+            priceHistory.push(price);
+            if (priceHistory.length > maxHistoryPoints) {
+                priceHistory.shift();
+            }
+            drawChart();
+        }
+        
+        function drawChart() {
+            const canvas = document.getElementById('price-chart');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            if (priceHistory.length < 2) {
+                ctx.fillStyle = '#666';
+                ctx.font = '12px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('Waiting for price data...', width/2, height/2);
+                return;
+            }
+            
+            const min = Math.min(...priceHistory);
+            const max = Math.max(...priceHistory);
+            const range = max - min || 1;
+            const padding = height * 0.1;
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 5; i++) {
+                const y = (height / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // Draw price line
+            ctx.beginPath();
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 2;
+            
+            priceHistory.forEach((p, i) => {
+                const x = (i / (maxHistoryPoints - 1)) * width;
+                const y = height - padding - ((p - min) / range) * (height - 2 * padding);
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            
+            ctx.stroke();
+            
+            // Fill area
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(0, 255, 136, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 255, 136, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Draw current price dot
+            const lastY = height - padding - ((priceHistory[priceHistory.length-1] - min) / range) * (height - 2 * padding);
+            ctx.beginPath();
+            ctx.arc(width - 5, lastY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#00ff88';
+            ctx.fill();
+            ctx.shadowColor = '#00ff88';
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+        
+        // UI Helpers
+        function setOrderSide(side) {
+            currentOrderSide = side;
+            const buyBtn = document.getElementById('btn-buy');
+            const sellBtn = document.getElementById('btn-sell');
+            
+            if (side === 'BUY') {
+                buyBtn.classList.add('ring-2', 'ring-green-500', 'border-2');
+                buyBtn.classList.remove('border');
+                sellBtn.classList.remove('ring-2', 'ring-red-500', 'border-2');
+                sellBtn.classList.add('border');
+            } else {
+                sellBtn.classList.add('ring-2', 'ring-red-500', 'border-2');
+                sellBtn.classList.remove('border');
+                buyBtn.classList.remove('ring-2', 'ring-green-500', 'border-2');
+                buyBtn.classList.add('border');
+            }
+        }
+        
+        function togglePriceInput() {
+            const type = document.getElementById('order-type').value;
+            const container = document.getElementById('price-container');
+            
+            if (type === 'LIMIT') {
+                container.classList.remove('hidden');
+                if (lastPrice > 0) {
+                    document.getElementById('order-price').value = lastPrice.toFixed(2);
+                }
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+        
+        function setQuantityPercent(percent) {
+            if (!accountData || !lastPrice) {
+                log('Account data not loaded', 'error');
+                return;
+            }
+            
+            const usdtBalance = accountData.balances.find(b => b.asset === 'USDT');
+            const btcBalance = accountData.balances.find(b => b.asset === 'BTC');
+            
+            let quantity = 0;
+            
+            if (currentOrderSide === 'BUY' && usdtBalance) {
+                const availableUsdt = parseFloat(usdtBalance.free);
+                const maxBtc = availableUsdt / lastPrice;
+                quantity = maxBtc * (percent / 100);
+            } else if (currentOrderSide === 'SELL' && btcBalance) {
+                const availableBtc = parseFloat(btcBalance.free);
+                quantity = availableBtc * (percent / 100);
+            }
+            
+            if (quantity > 0) {
+                document.getElementById('order-quantity').value = quantity.toFixed(6);
+                log(`Set quantity to ${percent}% of available balance`, 'info');
+            }
+        }
+        
+        function saveApiConfig() {
+            const key = document.getElementById('api-key').value.trim();
+            const secret = document.getElementById('api-secret').value.trim();
+            
+            if (!key || !secret) {
+                log('Please enter both API key and secret', 'error');
+                return;
+            }
+            
+            localStorage.setItem('mexc_api_key', key);
+            localStorage.setItem('mexc_api_secret', secret);
+            
+            log('✓ API configuration saved', 'info');
+            updateConnectionStatus(true);
+            
+            // Test connection
+            fetchAccount().then(() => {
+                fetchOpenOrders();
+            });
+        }
+        
+        function clearApiConfig() {
+            localStorage.removeItem('mexc_api_key');
+            localStorage.removeItem('mexc_api_secret');
+            document.getElementById('api-key').value = '';
+            document.getElementById('api-secret').value = '';
+            log('API configuration cleared', 'warning');
+            updateConnectionStatus(false);
+            accountData = null;
+            document.getElementById('balance-container').innerHTML = 
+                '<div class="text-center text-gray-500 py-8 text-sm">Configure API keys to view balance</div>';
+            document.getElementById('orders-container').innerHTML = 
+                '<div class="text-center text-gray-500 py-8 text-sm">No open orders</div>';
+        }
+        
+        function updateConnectionStatus(connected) {
+            const el = document.getElementById('connection-status');
+            if (connected) {
+                el.className = 'flex items-center gap-2 px-3 py-1.5 rounded bg-green-500/10 border border-green-500/30 text-green-400 text-xs';
+                el.innerHTML = '<span class="status-dot status-online"></span><span>Connected</span>';
+            } else {
+                el.className = 'flex items-center gap-2 px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30 text-red-400 text-xs';
+                el.innerHTML = '<span class="status-dot status-offline"></span><span>Disconnected</span>';
+            }
+        }
+        
+        function updateClock() {
+            document.getElementById('clock').textContent = 
+                new Date().toLocaleTimeString('en-US', { hour12: false }) + ' UTC';
+        }
+        
+        function log(message, type = 'info') {
+            const terminal = document.getElementById('terminal-output');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            
+            const colors = {
+                info: 'log-info',
+                error: 'log-error',
+                warning: 'log-warning',
+                trade: 'log-trade'
+            };
+            
+            const line = document.createElement('div');
+            line.innerHTML = `<span class="log-time">[${time}]</span> <span class="${colors[type] || 'log-info'}">${message}</span>`;
+            
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+            
+            while (terminal.children.length > 100) {
+                terminal.removeChild(terminal.firstChild);
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('terminal-output').innerHTML = '';
+        }
+        
+        function exportLog() {
+            const terminal = document.getElementById('terminal-output');
+            const text = Array.from(terminal.children).map(el => el.textContent).join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mexc-log-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log('Log exported', 'info');
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('price-chart');
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            drawChart();
+        });
+    </script>
 </body>
 </html>
